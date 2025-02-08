@@ -20,6 +20,8 @@ the character save them. You score a point for each heart saved.
 - q5 js
 - https://github.com/DefinitelyTyped/DefinitelyTyped
 - https://streets.planning.nyc.gov/about?lat=40.7661&layer-groups=%5B%22citymap%22%2C%22street-centerlines%22%5D&lng=-73.9802&zoom=11.35
+- https://github.com/alexbol99/flatten-js
+- https://opengameart.org/art-search-advanced?keys=sprite%20sheet&title=&field_art_tags_tid_op=or&field_art_tags_tid=&name=&field_art_type_tid%5B0%5D=9&sort_by=count&sort_order=DESC&items_per_page=24&Collection=&page=2
 
 ## Notes
 

@@ -1,4 +1,4 @@
-/// <reference types="node" path="./node_modules/@types/p5/index.d.ts" />;
+// TODO BIG time: convert this to a module to use FlattenJS libs and others.
 
 let map;
 let sprite;
@@ -45,7 +45,9 @@ let targetPoints = [];
 
 let debugEnabled = false;
 
+console.log("load app.js");
 function preload() {
+  console.log("preload called");
   // Load the sprite image (replace with your image path)
   spriteImage = loadImage("mario.png"); // Or comment this out if you're not using an image
   // Non synchronous file load, map maybe undefined if used here.
@@ -57,15 +59,11 @@ function preload() {
 }
 
 function setup() {
+  console.log("setup called");
   createCanvas(500, 500);
 
   map = new Map(map.map);
   console.log(map);
-
-  //   spriteX = width / 2 - spriteWidth / 2; // Center the sprite horizontally
-  //   spriteY = height / 2 - spriteHeight / 2; // Center the sprite vertically
-  //   spriteX = 50;
-  //   spriteY = 10;
 
   const startPos = map.entries().next().value[0];
   console.log("startPos", startPos);
@@ -77,12 +75,18 @@ function setup() {
   streets.push([20, 5, 20, 110]);
   streets.push([90, 5, 90, 110]);
 
-  for (i = 1; i < points.length; ++i) {
-    streets.push([...points[i - 1], ...points[i]]);
-
-    let [x1, y1] = points[i - 1];
-    let [x2, y2] = points[i];
-    hearts.push([(x1 + x2) / 2, (y1 + y2) / 2]);
+  for (const [point, neighborPoints] of map) {
+    for (const neighbor of neighborPoints) {
+      // TODO remove duplicate street from bidirectional edge
+      streets.push([point.x, point.y, neighbor.x, neighbor.y]);
+      let [x1, y1, x2, y2] = streets[streets.length - 1];
+      for (const coord of streets[streets.length - 1]) {
+        if (coord < 0 || coord > 500) {
+          console.log("out of bounds", point, neighbor);
+        }
+      }
+      hearts.push([(x1 + x2) / 2, (y1 + y2) / 2]);
+    }
   }
 
   for (h = 0; h < 5; ++h) {
@@ -91,26 +95,11 @@ function setup() {
       Math.round(Math.random() * 500),
     ]);
   }
-
-  // If you are NOT using an image, you can create a p5.js shape here. For example:
-  // sprite = createGraphics(spriteWidth, spriteHeight); // Create an off-screen graphics buffer
-  // sprite.fill(0, 0, 255); // Blue color
-  // sprite.rect(0, 0, spriteWidth, spriteHeight); // Draw a rectangle
 }
 
 function draw() {
   background(220); // Set a light gray background
 
-  //   if (keyIsDown(LEFT_ARROW)) {
-  //     spriteX -= 1;
-  //     console.log(spriteX, spriteY);
-  //   } else if (keyIsDown(RIGHT_ARROW)) {
-  //     spriteX += 1;
-  //   } else if (keyIsDown(UP_ARROW)) {
-  //     spriteY -= 1;
-  //   } else if (keyIsDown(DOWN_ARROW)) {
-  //     spriteY += 1;
-  //   }
   if (keyIsDown(LEFT_ARROW)) {
     spriteX -= speed;
     moveAlongLine(-1);
@@ -132,6 +121,8 @@ function draw() {
   debugDrawLines();
 
   for (i = 0; i < streets.length; i++) {
+    // circle(streets[i][0], streets[i][1], 3);
+    // circle(streets[i][2], streets[i][3], 3);
     line(...streets[i]);
   }
 
@@ -145,18 +136,6 @@ function draw() {
   if (nearestHeartIdx !== null) {
     renderQuestion(nearestHeartIdx);
   }
-
-  //   // Draw the sprite
-  //   if (spriteImage) {
-  //     image(spriteImage, spriteX, spriteY, spriteWidth, spriteHeight);
-  //   } else if (sprite) {
-  //     // If you created a p5.js shape
-  //     image(sprite, spriteX, spriteY);
-  //   } else {
-  //     // Fallback: draw a rectangle if no image or shape
-  //     fill(0, 0, 255);
-  //     rect(spriteX, spriteY, spriteWidth, spriteHeight);
-  //   }
 }
 
 function updateSprite() {
@@ -185,7 +164,15 @@ function mouseClicked() {
 }
 
 function getTargetPoints(destX, destY) {
-  return [[destX, destY]];
+  const [startX, startY] = findProjectionOnNearestStreet(spriteX, spriteY);
+  const [finalX, finalY] = findProjectionOnNearestStreet(destX, destY);
+  const path = findPath(
+    { x: startX, y: startY },
+    { x: finalX, y: finalY },
+    map
+  );
+  console.log(path);
+  return path.map((p) => [p.x, p.y]);
 }
 
 function debugDrawLines() {
@@ -245,29 +232,25 @@ function renderSprite() {
   circle(spriteX, spriteY, spriteWidth / 2);
 }
 
-function moveAlongLine(direction) {
-  return;
-  let currentLineIndex = findCurrentLine(); // Find the line the character is on
+function findProjectionOnNearestStreet(x, y) {
+  let closestStreetIdx = 0;
+  let closeness = INF;
+  for (let i = 0; i < streets.length; i++) {
+    let line = streets[i];
+    let d1 = dist(x, y, line[0], line[1]);
+    let d2 = dist(x, y, line[2], line[3]);
+    let lineLength = dist(line[0], line[1], line[2], line[3]);
+    let tolerance = 5; // Adjust this value for how close the character must be
 
-  if (currentLineIndex !== -1) {
-    //check if character is on line
-    let line = streets[currentLineIndex];
-    let dx = line[2] - line[0];
-    let dy = line[3] - line[1];
-    let lineLength = sqrt(dx * dx + dy * dy);
-
-    // Calculate how far along the line the character is (0 to 1)
-    let progress = calculateProgress(line);
-
-    progress += (direction * speed) / lineLength; // Update progress
-
-    // Constrain progress to 0-1
-    progress = constrain(progress, 0, 1);
-
-    // Calculate new character position
-    spriteX = line[0] + dx * progress;
-    spriteY = line[1] + dy * progress;
+    let curCloseness = d1 + d2 - lineLength;
+    if (curCloseness < closeness) {
+      closeness = curCloseness;
+      closestStreetIdx = i;
+    }
   }
+  // TODO project x,y on the line
+  const closestStreet = streets[closestStreetIdx];
+  return [closestStreet[0], closestStreet[1]];
 }
 
 function findCurrentLine() {
@@ -284,14 +267,4 @@ function findCurrentLine() {
     }
   }
   return -1; // Return -1 if not on any line (error)
-}
-
-function calculateProgress(line) {
-  let dx = line[2] - line[0];
-  let dy = line[3] - line[1];
-  let lineLengthSquared = dx * dx + dy * dy;
-
-  // Dot product of vector from line start to character and the line vector
-  let dotProduct = (spriteX - line[0]) * dx + (spriteY - line[1]) * dy;
-  return dotProduct / lineLengthSquared; // Normalized progress (0 to 1)
 }

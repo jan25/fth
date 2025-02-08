@@ -45,6 +45,26 @@ const main = () => {
     lines.push(line);
   }
 
+  const isValidIntersection = (point, line) => {
+    const [start, end] = intersectionsPerLine.get(line);
+    let [lx, rx] = [start.x, end.x];
+    if (lx > rx) {
+      [lx, rx] = [rx, lx];
+    }
+    if (point.x < lx || point.x > rx) {
+      return false;
+    }
+
+    let [ly, ry] = [start.y, end.y];
+    if (ly > ry) {
+      [ly, ry] = [ry, ly];
+    }
+    if (point.y < ly || point.y > ry) {
+      return false;
+    }
+    return true;
+  };
+
   for (let i = 0; i < lines.length; ++i) {
     const line1 = lines[i];
     for (let j = i + 1; j < lines.length; ++j) {
@@ -52,6 +72,12 @@ const main = () => {
       const intersections = line1.intersect(line2);
       // at most 1 intersection between lines
       for (const intersection of intersections) {
+        if (
+          !isValidIntersection(intersection, line1) ||
+          !isValidIntersection(intersection, line2)
+        ) {
+          continue;
+        }
         if (!intersectionsPerLine.has(line2)) {
           intersectionsPerLine.set(line2, []);
         }
@@ -84,6 +110,7 @@ const main = () => {
     }
   }
 
+  // TODO cache lines as optimization to find nearest line in the app.
   // List of tuples
   // [[sourcePoint, [neighborPoint]]...]
   console.log(JSON.stringify(Array.from(graph)));
