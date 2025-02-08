@@ -9,6 +9,11 @@ the character save them. You score a point for each heart saved.
 - Question: "Choose closest landmark from the heart"
 - Given 3 landmark options.
 
+- Or say a small joke in form of q&a with no answer required from user
+
+- click on screen to move character
+- initial position - times sq
+
 ## Random stuff
 
 - p5play

@@ -1,5 +1,11 @@
 {
   "devDependencies": {
-    "@types/p5": "^1.7.6"
+    "@flatten-js/core": "^1.6.2",
+    "@types/p5": "^1.7.6",
+    "lodash": "^4.17.21"
+  },
+  "type": "module",
+  "scripts": {
+    "preprocess_map": "node scripts/preprocess_map.js"
   }
 }
