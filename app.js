@@ -1,5 +1,7 @@
 // TODO BIG time: convert this to a module to use FlattenJS libs and others.
 
+// import { point } from "@flatten-js/core";
+
 let map;
 let sprite;
 let spriteX, spriteY; // Sprite's x and y coordinates
@@ -7,7 +9,7 @@ let spriteWidth = 25; // Width of the sprite
 let spriteHeight = 25; // Height of the sprite
 let speed = 1;
 
-let INF = 1000000;
+let INF = 1000000000;
 let streets = []; // [startx, starty, endx, endy]
 let hearts = [];
 
@@ -58,6 +60,11 @@ function preload() {
   );
 }
 
+function unhashPoint(pStr) {
+  let [x, y] = pStr.split(",");
+  return { x: parseFloat(x), y: parseFloat(y) };
+}
+
 function setup() {
   console.log("setup called");
   createCanvas(500, 500);
@@ -65,17 +72,18 @@ function setup() {
   map = new Map(map.map);
   console.log(map);
 
-  const startPos = map.entries().next().value[0];
+  const startPos = unhashPoint(map.entries().next().value[0]);
   console.log("startPos", startPos);
 
   [spriteX, spriteY] = [startPos.x, startPos.y];
 
-  streets.push([10, 10, 100, 10]);
-  streets.push([10, 100, 100, 100]);
-  streets.push([20, 5, 20, 110]);
-  streets.push([90, 5, 90, 110]);
+  // streets.push([10, 10, 100, 10]);
+  // streets.push([10, 100, 100, 100]);
+  // streets.push([20, 5, 20, 110]);
+  // streets.push([90, 5, 90, 110]);
 
-  for (const [point, neighborPoints] of map) {
+  for (const [pointStr, neighborPoints] of map) {
+    const point = unhashPoint(pointStr);
     for (const neighbor of neighborPoints) {
       // TODO remove duplicate street from bidirectional edge
       streets.push([point.x, point.y, neighbor.x, neighbor.y]);
@@ -128,10 +136,13 @@ function draw() {
 
   if (targetPoints.length > 0) {
     updateSprite();
+    for (const targetPoint of targetPoints) {
+      circle(...targetPoint, 4);
+    }
   }
   renderSprite();
 
-  renderHearts();
+  // renderHearts();
   const nearestHeartIdx = findNearestHeart();
   if (nearestHeartIdx !== null) {
     renderQuestion(nearestHeartIdx);
@@ -240,7 +251,6 @@ function findProjectionOnNearestStreet(x, y) {
     let d1 = dist(x, y, line[0], line[1]);
     let d2 = dist(x, y, line[2], line[3]);
     let lineLength = dist(line[0], line[1], line[2], line[3]);
-    let tolerance = 5; // Adjust this value for how close the character must be
 
     let curCloseness = d1 + d2 - lineLength;
     if (curCloseness < closeness) {

@@ -1,7 +1,8 @@
 import pkg from "lodash";
 import fs from "fs";
 const _ = pkg;
-import { Point, Line } from "@flatten-js/core";
+import { Segment, Point } from "@flatten-js/core";
+import { hashLine, hashPoint } from "utils.js";
 
 // TODO replace with real coordinates from map.
 const InitPoints = [
@@ -40,13 +41,13 @@ const main = () => {
       new Point(...InitPoints[i - 1]),
       new Point(...InitPoints[i]),
     ];
-    const line = new Line(start, end);
-    intersectionsPerLine.set(line, [start, end]);
+    const line = new Segment(start, end);
+    intersectionsPerLine.set(hashLine(line), [start, end]);
     lines.push(line);
   }
 
   const isValidIntersection = (point, line) => {
-    const [start, end] = intersectionsPerLine.get(line);
+    const [start, end] = intersectionsPerLine.get(hashLine(line));
     let [lx, rx] = [start.x, end.x];
     if (lx > rx) {
       [lx, rx] = [rx, lx];
@@ -78,25 +79,23 @@ const main = () => {
         ) {
           continue;
         }
-        if (!intersectionsPerLine.has(line2)) {
-          intersectionsPerLine.set(line2, []);
-        }
-        intersectionsPerLine.get(line1).push(intersection);
-        intersectionsPerLine.get(line2).push(intersection);
+        intersectionsPerLine.get(hashLine(line1)).push(intersection);
+        intersectionsPerLine.get(hashLine(line2)).push(intersection);
       }
     }
   }
 
   const graph = new Map();
   const addEdge = (a, b) => {
-    if (!graph.has(a)) {
-      graph.set(a, []);
+    const [aHash, bHash] = [hashPoint(a), hashPoint(b)];
+    if (!graph.has(aHash)) {
+      graph.set(aHash, []);
     }
-    if (!graph.has(b)) {
-      graph.set(b, []);
+    if (!graph.has(bHash)) {
+      graph.set(bHash, []);
     }
-    graph.get(a).push(b);
-    graph.get(b).push(a);
+    graph.get(aHash).push(b);
+    graph.get(bHash).push(a);
   };
 
   // TODO verify duplicate intersections in intersectionsPerLine
@@ -106,18 +105,21 @@ const main = () => {
     for (let i = 1; i < points.length; ++i) {
       const [prev, cur] = [points[i - 1], points[i]];
       if (prev.x == cur.x && prev.y == cur.y) continue;
-      addEdge(cur.toJSON(), prev.toJSON());
+      addEdge(cur, prev);
     }
   }
 
   // TODO cache lines as optimization to find nearest line in the app.
   // List of tuples
-  // [[sourcePoint, [neighborPoint]]...]
+  // [[sourcePointSerialized, [neighborPoint]]...]
   console.log(JSON.stringify(Array.from(graph)));
   fs.writeFileSync(
     "preprocess_map_output.json",
     JSON.stringify({ map: Array.from(graph) })
   );
 };
+
+let l = new Segment(new Point(1, 2), new Point(3, 4));
+console.log(l.start, l.end);
 
 main();

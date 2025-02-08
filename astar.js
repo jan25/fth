@@ -1,21 +1,26 @@
 console.log("load astar.js");
 
 const findPath = (source, dest, map) => {
+  console.log("findPath called with", source, dest);
   const hueristic = (p1, p2) => {
     return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
   };
 
-  const serialize = (p) => {
-    return `(${p.x}, ${p.y})`;
+  const unhashPoint = (pStr) => {
+    let [x, y] = pStr.split(",");
+    return { x: parseInt(x), y: parseInt(y) };
+  };
+  const hashPoint = (p) => {
+    return `${p.x},${p.y}`;
   };
   const graph = new Map();
-  for (const [point, neighborPoints] of map) {
-    graph.set(serialize(point), neighborPoints);
+  for (const [pointStr, neighborPoints] of map) {
+    graph.set(pointStr, neighborPoints);
   }
   console.log(graph);
 
   const eq = (p1, p2) => {
-    return p1.x == p2.x && p1.y == p2.y;
+    return dist(p1, p2) < 2;
   };
 
   const dist = (p1, p2) => {
@@ -27,11 +32,12 @@ const findPath = (source, dest, map) => {
   // TODO use priority queue
   const frontier = [];
   frontier.push([source, 0]);
-  const cameFrom = new Map([[serialize(source), 0]]);
-  const costSoFar = new Map([[serialize(source), 0]]);
+  const cameFrom = new Map([[hashPoint(source), 0]]);
+  const costSoFar = new Map([[hashPoint(source), 0]]);
+  console.log(frontier, cameFrom, costSoFar);
 
   const getNext = () => {
-    const bestIdx = 0;
+    let bestIdx = 0;
     for (let i = 0; i < frontier.length; i++) {
       if (frontier[i][1] < frontier[bestIdx][1]) {
         bestIdx = i;
@@ -45,30 +51,37 @@ const findPath = (source, dest, map) => {
   };
 
   while (frontier.length > 0) {
-    console.log("foo");
     const current = getNext();
     const point = current[0];
     if (eq(point, dest)) {
+      console.log("found path");
       break;
     }
-    for (const next of graph.get(serialize(point))) {
-      const newCost = costSoFar.get(serialize(point)) + dist(point, next);
+    console.log(
+      "processing",
+      point,
+      hashPoint(point),
+      graph.get(hashPoint(point))
+    );
+    console.log(graph);
+    for (const next of graph.get(hashPoint(point))) {
+      const newCost = costSoFar.get(hashPoint(point)) + dist(point, next);
       if (
-        !costSoFar.has(serialize(next)) ||
-        newCost < costSoFar.get(serialize(next))
+        !costSoFar.has(hashPoint(next)) ||
+        newCost < costSoFar.get(hashPoint(next))
       ) {
-        costSoFar.set(serialize(next), newCost);
+        costSoFar.set(hashPoint(next), newCost);
         const priority = newCost + hueristic(dest, next);
         frontier.push([next, priority]);
-        cameFrom.set(serialize(next), point);
+        cameFrom.set(hashPoint(next), point);
       }
     }
   }
 
   const path = [dest];
   let current = dest;
-  while (serialize(current) != serialize(source)) {
-    current = cameFrom.get(serialize(current));
+  while (hashPoint(current) != hashPoint(source)) {
+    current = cameFrom.get(hashPoint(current));
     path.push(current);
   }
   // [dest, ..., source]
