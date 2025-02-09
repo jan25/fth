@@ -1,3 +1,12 @@
+export class Log {
+  static DEBUG = false;
+  static i(...parts) {
+    if (this.DEBUG) {
+      console.log(...parts);
+    }
+  }
+}
+
 class Pos {
   constructor(r, c) {
     this.r = r;
@@ -17,8 +26,9 @@ export class Grid {
   constructor(nRows, nCols) {
     this.nRows = nRows;
     this.nCols = nCols;
+    // TODO use sparse grid
     this.grid = [...Array(nRows)].map(() =>
-      [...Array(nCols)].map(() => this.EMPTY)
+      [...Array(nCols)].map(() => Grid.EMPTY)
     );
 
     this.spritePos = null;
@@ -27,6 +37,26 @@ export class Grid {
 
   static toHash = (row, col) => {
     return `hash(${row},${col})`;
+  };
+
+  moveSprite = (rowInc, colInc) => {
+    const [newRow, newCol] = [
+      this.spritePos.r + rowInc,
+      this.spritePos.c + colInc,
+    ];
+    Log.i("value at", newRow, newCol, this.grid[newRow][newCol], Grid.OBSTACLE);
+    if (
+      this.outOfBounds(newRow, newCol) ||
+      this.grid[newRow][newCol] == Grid.OBSTACLE
+    ) {
+      return false;
+    }
+    this.spritePos = new Pos(newRow, newCol);
+    return true;
+  };
+
+  outOfBounds = (row, col) => {
+    return row < 0 || col < 0 || row >= this.nRows || col >= this.nCols;
   };
 
   setSprite = (row, col) => {
@@ -48,11 +78,26 @@ export class Grid {
   }
 
   setObstacle(row, col) {
+    Log.i("setting obstacle at", row, col);
     const cell = new Pos(row, col);
-    if (this.sprite.eq(cell) || this.heart.eq(cell)) {
+    if (this.spritePos.eq(cell) || this.heartPos.eq(cell)) {
       // TODO throw error
-      return;
+      return false;
     }
-    this.grid[row][col] = this.OBSTACLE;
+    this.grid[row][col] = Grid.OBSTACLE;
+    return true;
+  }
+
+  createObstacles() {
+    const numObs = 10;
+    [...Array(numObs)].forEach(() => {
+      const [r, c] = [randInt(this.nRows), randInt(this.nCols)];
+      this.setObstacle(r, c);
+    });
   }
 }
+
+export const randInt = (maxInt) => {
+  // right exclusive [0, maxInt)
+  return Math.floor(Math.random() * maxInt);
+};

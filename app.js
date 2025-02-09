@@ -1,4 +1,4 @@
-import { Grid } from "./utils.js";
+import { Log, Grid, randInt } from "./utils.js";
 
 // dimensions
 const CANVAS_W = 500;
@@ -27,7 +27,9 @@ export default new p5((p) => {
 
     grid = new Grid(ROWS, COLS);
     grid.setSprite(1, 1);
-    grid.setHeart(h.randInt(ROWS), h.randInt(COLS));
+    grid.setHeart(randInt(ROWS), randInt(COLS));
+    grid.createObstacles();
+    Log.i("grid", grid.grid);
   };
 
   p.setup = () => {
@@ -37,8 +39,7 @@ export default new p5((p) => {
   p.draw = () => {
     p.background(BG_COL);
 
-    h.renderSprite();
-    h.renderHeart();
+    h.renderGrid();
 
     h.registerKeyDownHandlers();
 
@@ -47,25 +48,47 @@ export default new p5((p) => {
 
   p.keyPressed = () => {};
 
+  h.renderGrid = () => {
+    for (const rowIdx in grid.grid) {
+      for (const colIdx in grid.grid[rowIdx]) {
+        if (grid.grid[rowIdx][colIdx] === Grid.OBSTACLE) {
+          h.renderObstacle(rowIdx, colIdx);
+        }
+      }
+    }
+    h.renderSprite();
+    h.renderHeart();
+  };
+
+  h.renderObstacle = (row, col) => {
+    const [x, y] = [h.gridX(col), h.gridY(row)];
+    p.push();
+    p.fill("black");
+    p.rect(x, y, CELL_W, CELL_W);
+    p.pop();
+  };
+
   h.updateHeartIfReached = () => {
     if (!grid.spritePos.eq(grid.heartPos)) {
       return;
     }
 
-    grid.setHeart(h.randInt(ROWS), h.randInt(COLS));
+    grid.setHeart(randInt(ROWS), randInt(COLS));
   };
 
-  h.registerKeyDownHandlers = () => {
-    if (p.keyIsDown(p.UP_ARROW)) {
-      grid.spritePos.r -= 1;
-    } else if (p.keyIsDown(p.DOWN_ARROW)) {
-      grid.spritePos.r += 1;
-    } else if (p.keyIsDown(p.RIGHT_ARROW)) {
-      grid.spritePos.c += 1;
-    } else if (p.keyIsDown(p.LEFT_ARROW)) {
-      grid.spritePos.c -= 1;
+  h.registerKeyDownHandlers = () => {};
+
+  p.keyPressed = () => {
+    Log.i(p.key);
+    if (p.keyCode == p.UP_ARROW) {
+      grid.moveSprite(-1, 0);
+    } else if (p.keyCode == p.DOWN_ARROW) {
+      grid.moveSprite(1, 0);
+    } else if (p.keyCode == p.LEFT_ARROW) {
+      grid.moveSprite(0, -1);
+    } else if (p.keyCode == p.RIGHT_ARROW) {
+      grid.moveSprite(0, 1);
     }
-    // TODO restrict movements to the grid
   };
 
   h.renderSprite = () => {
@@ -94,10 +117,5 @@ export default new p5((p) => {
 
   h.gridY = (cellY) => {
     return cellY * CELL_W;
-  };
-
-  h.randInt = (maxInt) => {
-    // right exclusive [0, maxInt)
-    return Math.floor(Math.random() * maxInt);
   };
 });
