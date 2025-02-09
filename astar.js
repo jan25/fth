@@ -1,6 +1,6 @@
-console.log("load astar.js");
+import { Cell } from "utils.js";
 
-const findPath = (source, dest, map) => {
+export default findPath = (srcCell, destCell, grid) => {
   console.log("findPath called with", source, dest);
   const hueristic = (p1, p2) => {
     return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
