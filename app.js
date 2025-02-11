@@ -1,10 +1,11 @@
-import { Log, Grid, randInt } from "./utils.js";
+import { Log, Grid, range } from "./utils.js";
 
 // dimensions
 const CANVAS_W = 500;
 const CANVAS_H = 500;
 const ROWS = 20;
 const COLS = 20;
+const N_OBSTACLES = 200;
 const CELL_W = CANVAS_W / COLS;
 
 // colors
@@ -24,21 +25,21 @@ export default new p5((p) => {
   p.preload = () => {
     sprite = p.loadImage("mario.png");
     heart = p.loadImage("heart_16x16.png");
+    h.rangeRows = range(ROWS);
+    h.rangeCols = range(COLS);
 
-    grid = new Grid(ROWS, COLS);
-    grid.setSprite(1, 1);
-    grid.setHeart(randInt(ROWS), randInt(COLS));
-    grid.createObstacles();
-    Log.i("grid", grid.grid);
+    grid = Grid.create(ROWS, COLS, N_OBSTACLES);
   };
 
   p.setup = () => {
     p.createCanvas(CANVAS_W, CANVAS_H);
+    p.frameRate(10);
   };
 
   p.draw = () => {
     p.background(BG_COL);
 
+    grid.walkSprite();
     h.renderGrid();
 
     h.registerKeyDownHandlers();
@@ -46,16 +47,37 @@ export default new p5((p) => {
     h.updateHeartIfReached();
   };
 
-  p.keyPressed = () => {};
+  // should work on touch too
+  p.mousePressed = () => {
+    const [col, row] = [
+      Math.floor(p.mouseX / CELL_W),
+      Math.floor(p.mouseY / CELL_W),
+    ];
+    if (grid.outOfBounds(row, col)) {
+      Log.i("out of bounds", row, col);
+      return;
+    }
+
+    // if obstacle -> clear and set elsewhere
+    if (grid.isObstacle(row, col)) {
+      Log.i("swapping obstacle at", row, col);
+      grid.setObstacle();
+      grid.rmObstacle(row, col);
+    }
+    // if empty or heart -> walk towards it
+    else if (!grid.isSprite(row, col)) {
+      grid.computeSpritePath(row, col);
+    }
+  };
 
   h.renderGrid = () => {
-    for (const rowIdx in grid.grid) {
-      for (const colIdx in grid.grid[rowIdx]) {
-        if (grid.grid[rowIdx][colIdx] === Grid.OBSTACLE) {
+    h.rangeRows().forEach((_, rowIdx) =>
+      h.rangeCols().forEach((_, colIdx) => {
+        if (grid.isObstacle(rowIdx, colIdx)) {
           h.renderObstacle(rowIdx, colIdx);
         }
-      }
-    }
+      })
+    );
     h.renderSprite();
     h.renderHeart();
   };
@@ -69,11 +91,10 @@ export default new p5((p) => {
   };
 
   h.updateHeartIfReached = () => {
-    if (!grid.spritePos.eq(grid.heartPos)) {
-      return;
+    if (grid.isHeartReached()) {
+      // TODO show message
+      grid.moveHeart();
     }
-
-    grid.setHeart(randInt(ROWS), randInt(COLS));
   };
 
   h.registerKeyDownHandlers = () => {};

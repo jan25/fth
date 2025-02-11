@@ -14,6 +14,12 @@ the character save them. You score a point for each heart saved.
 - click on screen to move character
 - initial position - times sq
 
+Different idea: Find my heart
+
+- Find way to the heart
+- Click on empty cell or heart cell walk the character toward that cell
+- Click on obstacle cell clears the obstacle and places it a empty cell
+
 ## Random stuff
 
 - p5play
