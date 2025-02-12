@@ -1,6 +1,4 @@
-# ttf
-
-## Game play
+# FTH = Follow thy heart
 
 Game contains a character who exlores the streets of Manhattan. It needs to locate broken hearts
 left on the street and save them. However each heart asks a question before it can let

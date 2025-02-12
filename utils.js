@@ -86,6 +86,10 @@ class PosSet {
     this.rm(pos);
     return pos;
   }
+
+  size() {
+    return this.list.length;
+  }
 }
 
 export class Grid {
@@ -222,8 +226,12 @@ export class Grid {
     return new Pos(row, col).eq(this.heartPos);
   }
 
-  setObstacle() {
-    this.emptyCells.rmRand();
+  setObstacle(nObs) {
+    range(nObs)().forEach(() => {
+      if (this.emptyCells.size() > 0) {
+        this.emptyCells.rmRand();
+      }
+    });
   }
 
   rmObstacle(row, col) {

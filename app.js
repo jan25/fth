@@ -17,6 +17,7 @@ let heart;
 
 // state
 let grid;
+let level = 1;
 
 export default new p5((p) => {
   // helpers
@@ -61,7 +62,7 @@ export default new p5((p) => {
     // if obstacle -> clear and set elsewhere
     if (grid.isObstacle(row, col)) {
       Log.i("swapping obstacle at", row, col);
-      grid.setObstacle();
+      grid.setObstacle(level);
       grid.rmObstacle(row, col);
     }
     // if empty or heart -> walk towards it
@@ -94,6 +95,7 @@ export default new p5((p) => {
     if (grid.isHeartReached()) {
       // TODO show message
       grid.moveHeart();
+      //   level++;
     }
   };
 
