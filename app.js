@@ -11,7 +11,7 @@ const N_OBSTACLES = 200;
 const CELL_W = CANVAS_W / COLS;
 const SPRITE_SHEET_ROWS = 4;
 const SPRITE_FRAME_W = 192 / SPRITE_SHEET_ROWS;
-const ZOOM_SPITE_PX = 10;
+const ZOOM_SPITE_PX = 7;
 const HEART_SHEET_FRAMES = 12;
 const HEART_FRAME_W = 384 / HEART_SHEET_FRAMES;
 
@@ -52,8 +52,6 @@ export default new p5((p) => {
     h.walkSprite();
     h.renderGrid();
 
-    h.registerKeyDownHandlers();
-
     h.updateHeartIfReached();
   };
 
@@ -64,7 +62,6 @@ export default new p5((p) => {
       Math.floor(p.mouseY / CELL_W),
     ];
     if (grid.outOfBounds(row, col)) {
-      Log.i("out of bounds", row, col);
       return;
     }
 
@@ -99,6 +96,15 @@ export default new p5((p) => {
     );
     h.renderSprite();
     h.renderHeart();
+
+    const [col, row] = [
+      Math.floor(p.mouseX / CELL_W),
+      Math.floor(p.mouseY / CELL_W),
+    ];
+    if (grid.outOfBounds(row, col)) {
+      return;
+    }
+    // rect
   };
 
   h.renderObstacle = (row, col) => {
@@ -117,10 +123,8 @@ export default new p5((p) => {
     }
   };
 
-  h.registerKeyDownHandlers = () => {};
-
   p.keyPressed = () => {
-    Log.i(p.key);
+    if (!Log.DEBUG) return;
     if (p.keyCode == p.UP_ARROW) {
       grid.moveSprite(-1, 0);
     } else if (p.keyCode == p.DOWN_ARROW) {

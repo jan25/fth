@@ -244,7 +244,7 @@ export class Grid {
   }
 }
 
-// Sprite direction. See george.png
+// Sprite direction. See assets/george.png
 class Dir {
   static DOWN = 0;
   static LEFT = 1;
