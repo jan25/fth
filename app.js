@@ -15,10 +15,12 @@ const SPRITE_FRAME_W = 192 / SPRITE_SHEET_ROWS;
 const ZOOM_SPITE_PX = 7;
 const HEART_SHEET_FRAMES = 12;
 const HEART_FRAME_W = 384 / HEART_SHEET_FRAMES;
-const TEXT_SIZE = 10;
+const TEXT_SIZE_L = 14;
+const TEXT_SIZE_M = 8;
+const TEXT_PAD = 10;
 
 // colors
-const BG_COL = "grey";
+const BG_COL = 200;
 
 // assets
 let sprite;
@@ -137,7 +139,7 @@ export default new p5((p) => {
 
       score++;
       level++;
-      Storage.set("best", score);
+      Storage.set("best", Math.max(bestScore, score));
     }
   };
 
@@ -200,21 +202,33 @@ export default new p5((p) => {
   };
 
   h.showScores = () => {
-    const [x, y] = [CANVAS_W - CANVAS_BUFFER * 2, CANVAS_H];
-    p.textSize(TEXT_SIZE);
-    p.text(`${score} hearts picked`, x, y + TEXT_SIZE);
-    p.text(`${bombsLeft} bombs left`, x, y + 2 * TEXT_SIZE);
+    p.push();
+    const [x, y] = [TEXT_PAD, CANVAS_H + TEXT_PAD / 3];
+    p.textStyle(p.NORMAL);
+    p.textSize(TEXT_SIZE_L);
+    p.text(`${score} ❤️picked`, x, y + TEXT_SIZE_L);
+    p.text(`${bombsLeft} 💥left`, x, y + 2 * TEXT_SIZE_L);
+    p.textSize(TEXT_SIZE_M);
+    p.textStyle(p.ITALIC);
     p.text(
       `Best was ${bestScore} heart${bestScore != 1 ? "s" : ""}`,
       x,
-      y + 3 * TEXT_SIZE
+      y + 2 * TEXT_SIZE_L + TEXT_SIZE_M + TEXT_PAD / 2
     );
+    p.pop();
   };
 
   h.showMsg = () => {
+    p.push();
     const msg = h.getMsg();
-    p.textSize(TEXT_SIZE);
-    p.text(msg, 0, CANVAS_H + CANVAS_BUFFER / 2);
+    p.textStyle(p.BOLDITALIC);
+    p.textSize(TEXT_SIZE_L);
+    p.text(
+      msg,
+      CANVAS_W - p.textWidth(msg) - TEXT_PAD,
+      CANVAS_H + CANVAS_BUFFER / 2
+    );
+    p.pop();
   };
 
   h.getMsg = () => {
@@ -223,16 +237,16 @@ export default new p5((p) => {
       Math.floor(p.mouseY / CELL_W),
     ];
     if (grid.isObstacle(row, col)) {
-      return bombsLeft > 0 ? "Destory wall!" : "No bombs left to destroy wall!";
+      return bombsLeft > 0 ? "💥Destory wall!" : "⚠No bombs left";
     }
     if (grid.isKey(row, col)) {
-      return "Key to new life";
+      return "🗝️Key to new life";
     }
     if (grid.isKey(row, col, true)) {
-      return "Teleport & Quit!!";
+      return "🆘Teleport & Quit‼️";
     }
     // empty
-    return "Click to walk.";
+    return "🏃🏻‍♂️‍➡️Click to run";
   };
 
   h.renderWall = (x, y) => {

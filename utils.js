@@ -26,8 +26,4 @@ export class Storage {
   static get = (k, defaultVal = undefined) => {
     return sessionStorage.getItem(`key:${k}`) || defaultVal;
   };
-
-  static rm = (k) => {
-    sessionStorage.removeItem(`key:${k}`);
-  };
 }
