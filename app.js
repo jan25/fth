@@ -5,9 +5,10 @@ import { Log, range } from "./utils.js";
 const FRAME_RATE = 9;
 const CANVAS_W = 500;
 const CANVAS_H = 500;
+const CANVAS_BUFFER = 50;
 const ROWS = 20;
 const COLS = 20;
-const N_OBSTACLES = 200;
+const N_OBSTACLES = 100;
 const CELL_W = CANVAS_W / COLS;
 const SPRITE_SHEET_ROWS = 4;
 const SPRITE_FRAME_W = 192 / SPRITE_SHEET_ROWS;
@@ -21,10 +22,11 @@ const BG_COL = "grey";
 // assets
 let sprite;
 let heart;
+let tiles;
 
 // state
 let grid;
-let level = 1;
+let level = 5;
 let [spriteFrameRow, spriteFrameCol] = [0, 0];
 let heartFrame = 0;
 
@@ -35,6 +37,7 @@ export default new p5((p) => {
   p.preload = () => {
     sprite = p.loadImage("assets/george.png");
     heart = p.loadImage("assets/heart.png");
+    tiles = p.loadImage("assets/tiles.png");
     h.rangeRows = range(ROWS);
     h.rangeCols = range(COLS);
 
@@ -42,7 +45,7 @@ export default new p5((p) => {
   };
 
   p.setup = () => {
-    p.createCanvas(CANVAS_W, CANVAS_H);
+    p.createCanvas(CANVAS_W, CANVAS_H + CANVAS_BUFFER);
     p.frameRate(FRAME_RATE);
   };
 
@@ -65,10 +68,9 @@ export default new p5((p) => {
       return;
     }
 
-    // if obstacle -> clear and set elsewhere
+    // if obstacle -> clear
     if (grid.isObstacle(row, col)) {
-      Log.i("swapping obstacle at", row, col);
-      grid.setObstacle(level);
+      Log.i("removing obstacle at", row, col);
       grid.rmObstacle(row, col);
     }
     // if empty or heart -> walk towards it
@@ -90,7 +92,9 @@ export default new p5((p) => {
     h.rangeRows().forEach((_, rowIdx) =>
       h.rangeCols().forEach((_, colIdx) => {
         if (grid.isObstacle(rowIdx, colIdx)) {
-          h.renderObstacle(rowIdx, colIdx);
+          h.renderWall(h.gridX(colIdx), h.gridY(rowIdx));
+        } else {
+          h.renderEmptyCell(h.gridX(colIdx), h.gridY(rowIdx));
         }
       })
     );
@@ -107,19 +111,12 @@ export default new p5((p) => {
     // rect
   };
 
-  h.renderObstacle = (row, col) => {
-    const [x, y] = [h.gridX(col), h.gridY(row)];
-    p.push();
-    p.fill("black");
-    p.rect(x, y, CELL_W, CELL_W);
-    p.pop();
-  };
-
   h.updateHeartIfReached = () => {
     if (grid.isHeartReached()) {
       // TODO show message
       grid.moveHeart();
-      //   level++;
+      level++;
+      grid.setObstacle(level);
     }
   };
 
@@ -151,6 +148,10 @@ export default new p5((p) => {
   };
 
   h.renderHeart = () => {
+    p.push();
+    if (grid.heartPos.r > 5) {
+      p.tint(255, 127);
+    }
     heartFrame = (heartFrame + 1) % HEART_SHEET_FRAMES;
     p.image(
       heart,
@@ -163,6 +164,15 @@ export default new p5((p) => {
       HEART_FRAME_W,
       HEART_FRAME_W
     );
+    p.pop();
+  };
+
+  h.renderWall = (x, y) => {
+    p.image(tiles, x, y, CELL_W, CELL_W, 32, 0, 32, 32);
+  };
+
+  h.renderEmptyCell = (x, y) => {
+    p.image(tiles, x, y, CELL_W, CELL_W, 0, 0, 32, 32);
   };
 
   h.gridX = (cellX) => {

@@ -2,7 +2,7 @@
 
 set -x
 
-# Checkout main branch and santiy check
+# Checkout main branch and sanity check
 git checkout main
 [[ -z $(git status -s) ]] || echo "WARNING: local changes found!"
 
