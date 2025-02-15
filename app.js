@@ -26,6 +26,8 @@ const BG_COL = 200;
 let sprite;
 let heart;
 let tiles;
+let bell;
+let pop;
 
 // state
 let grid;
@@ -44,6 +46,8 @@ export default new p5((p) => {
     sprite = p.loadImage("assets/george.png");
     heart = p.loadImage("assets/heart.png");
     tiles = p.loadImage("assets/tiles.png");
+    bell = p.createAudio("/assets/bell.wav");
+    pop = p.createAudio("/assets/pop.ogg");
     h.rangeRows = range(ROWS);
     h.rangeCols = range(COLS);
 
@@ -100,6 +104,7 @@ export default new p5((p) => {
       Log.i("removing obstacle at", row, col);
       bombsLeft--;
       grid.rmObstacle(row, col);
+      pop.play();
     }
     // if empty or heart -> walk towards it
     else if (!grid.isSprite(row, col)) {
@@ -140,6 +145,7 @@ export default new p5((p) => {
       score++;
       level++;
       Storage.set("best", Math.max(bestScore, score));
+      bell.play();
     }
   };
 
