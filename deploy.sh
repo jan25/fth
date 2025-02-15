@@ -1,6 +1,7 @@
 #!/bin/bash
+# Utility script to sync local commits and deploy the app.
 
-set -x
+set -xe
 
 # Checkout main branch and sanity check
 git checkout main

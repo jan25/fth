@@ -1,3 +1,5 @@
+import UIfx from "./lib/uifx.js";
+
 export class Log {
   static DEBUG = false;
   static i(...msgs) {
@@ -26,4 +28,9 @@ export class Storage {
   static get = (k, defaultVal = undefined) => {
     return sessionStorage.getItem(`key:${k}`) || defaultVal;
   };
+}
+
+export class Sounds {
+  static bell = new UIfx("./assets/bell.wav");
+  static pop = new UIfx("./assets/pop.ogg");
 }

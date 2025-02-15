@@ -8,10 +8,11 @@ Try it at [jan25/fth](https://jan25.github.io/fth/)
 
 You're the character who should survive the world while picking as many hearts as possible over several life times until death summons.
 
-![](assets/game.png)
+<img src="./assets/game.png" width="443" />
 
 For best experience play in desktop screen!
 
 ## Credits
 
 - Game assets are from amazing [Open game art](https://opengameart.org/) community.
+- [wle8300](https://github.com/wle8300) for providing UIfx library.
