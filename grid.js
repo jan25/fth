@@ -18,7 +18,11 @@ class Pos {
   }
 
   eq(other) {
-    return this.r === other.r && this.c === other.c;
+    return other !== null && this.r === other.r && this.c === other.c;
+  }
+
+  oneOf(...others) {
+    return others.filter((other) => this.eq(other)).length > 0;
   }
 
   hash() {
@@ -100,6 +104,8 @@ export class Grid {
     this.heartPos = null;
     this.spritePos = null;
     this.prevSpritePos = null;
+    this.keyPos = null;
+    this.skullKeyPos = null;
     // Steps for sprite to walk. Next step is last in list.
     this.spritePath = [];
   }
@@ -119,8 +125,12 @@ export class Grid {
   isObstacle(row, col) {
     return (
       !this.isEmpty(row, col) &&
-      !this.isSprite(row, col) &&
-      !this.isHeart(row, col)
+      !new Pos(row, col).oneOf(
+        this.spritePos,
+        this.heartPos,
+        this.keyPos,
+        this.skullKeyPos
+      )
     );
   }
 
@@ -221,8 +231,16 @@ export class Grid {
     return this.spritePos.eq(this.heartPos);
   }
 
+  isKeyReached() {
+    return this.spritePath.length == 0 && this.spritePos.eq(this.keyPos);
+  }
+
   isHeart(row, col) {
     return new Pos(row, col).eq(this.heartPos);
+  }
+
+  isKey(row, col, skull = false) {
+    return new Pos(row, col).eq(skull ? this.skullKeyPos : this.keyPos);
   }
 
   setObstacle(nObs) {
@@ -241,6 +259,13 @@ export class Grid {
     range(nObs)().forEach(() => {
       this.emptyCells.rmRand();
     });
+  }
+
+  createKeys() {
+    if (this.keyPos == null) {
+      this.keyPos = this.emptyCells.rmRand();
+      this.skullKeyPos = this.emptyCells.rmRand();
+    }
   }
 }
 

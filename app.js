@@ -1,5 +1,5 @@
 import { Grid } from "./grid.js";
-import { Log, range } from "./utils.js";
+import { Log, range, Storage } from "./utils.js";
 
 // dimensions
 const FRAME_RATE = 9;
@@ -15,6 +15,7 @@ const SPRITE_FRAME_W = 192 / SPRITE_SHEET_ROWS;
 const ZOOM_SPITE_PX = 7;
 const HEART_SHEET_FRAMES = 12;
 const HEART_FRAME_W = 384 / HEART_SHEET_FRAMES;
+const TEXT_SIZE = 10;
 
 // colors
 const BG_COL = "grey";
@@ -26,9 +27,12 @@ let tiles;
 
 // state
 let grid;
-let level = 5;
+let level;
 let [spriteFrameRow, spriteFrameCol] = [0, 0];
 let heartFrame = 0;
+let score;
+let bombsLeft;
+let bestScore;
 
 export default new p5((p) => {
   // helpers
@@ -41,7 +45,19 @@ export default new p5((p) => {
     h.rangeRows = range(ROWS);
     h.rangeCols = range(COLS);
 
+    h.newGame();
+  };
+
+  h.newGame = () => {
+    h.initNewGrid();
+    score = 0;
+    bestScore = Storage.get("best", 0);
+  };
+
+  h.initNewGrid = () => {
     grid = Grid.create(ROWS, COLS, N_OBSTACLES);
+    bombsLeft = ROWS;
+    level = 5;
   };
 
   p.setup = () => {
@@ -52,9 +68,12 @@ export default new p5((p) => {
   p.draw = () => {
     p.background(BG_COL);
 
+    h.showMsg();
+    h.showScores();
     h.walkSprite();
     h.renderGrid();
 
+    h.updateIfKeyReached();
     h.updateHeartIfReached();
   };
 
@@ -68,9 +87,16 @@ export default new p5((p) => {
       return;
     }
 
+    if (grid.isKey(row, col, true)) {
+      // Skull key
+      h.newGame();
+      return;
+    }
+
     // if obstacle -> clear
-    if (grid.isObstacle(row, col)) {
+    if (bombsLeft > 0 && grid.isObstacle(row, col)) {
       Log.i("removing obstacle at", row, col);
+      bombsLeft--;
       grid.rmObstacle(row, col);
     }
     // if empty or heart -> walk towards it
@@ -100,23 +126,24 @@ export default new p5((p) => {
     );
     h.renderSprite();
     h.renderHeart();
-
-    const [col, row] = [
-      Math.floor(p.mouseX / CELL_W),
-      Math.floor(p.mouseY / CELL_W),
-    ];
-    if (grid.outOfBounds(row, col)) {
-      return;
-    }
-    // rect
+    h.renderKeys();
   };
 
   h.updateHeartIfReached = () => {
     if (grid.isHeartReached()) {
-      // TODO show message
       grid.moveHeart();
-      level++;
       grid.setObstacle(level);
+      grid.createKeys();
+
+      score++;
+      level++;
+      Storage.set("best", score);
+    }
+  };
+
+  h.updateIfKeyReached = () => {
+    if (grid.isKeyReached()) {
+      h.initNewGrid();
     }
   };
 
@@ -148,10 +175,6 @@ export default new p5((p) => {
   };
 
   h.renderHeart = () => {
-    p.push();
-    if (grid.heartPos.r > 5) {
-      p.tint(255, 127);
-    }
     heartFrame = (heartFrame + 1) % HEART_SHEET_FRAMES;
     p.image(
       heart,
@@ -164,7 +187,52 @@ export default new p5((p) => {
       HEART_FRAME_W,
       HEART_FRAME_W
     );
-    p.pop();
+  };
+
+  h.renderKeys = () => {
+    if (grid.keyPos == null) return;
+    h.renderKey(h.gridX(grid.keyPos.c), h.gridY(grid.keyPos.r));
+    h.renderKey(
+      h.gridX(grid.skullKeyPos.c),
+      h.gridY(grid.skullKeyPos.r),
+      true // skull
+    );
+  };
+
+  h.showScores = () => {
+    const [x, y] = [CANVAS_W - CANVAS_BUFFER * 2, CANVAS_H];
+    p.textSize(TEXT_SIZE);
+    p.text(`${score} hearts picked`, x, y + TEXT_SIZE);
+    p.text(`${bombsLeft} bombs left`, x, y + 2 * TEXT_SIZE);
+    p.text(
+      `Best was ${bestScore} heart${bestScore != 1 ? "s" : ""}`,
+      x,
+      y + 3 * TEXT_SIZE
+    );
+  };
+
+  h.showMsg = () => {
+    const msg = h.getMsg();
+    p.textSize(TEXT_SIZE);
+    p.text(msg, 0, CANVAS_H + CANVAS_BUFFER / 2);
+  };
+
+  h.getMsg = () => {
+    const [col, row] = [
+      Math.floor(p.mouseX / CELL_W),
+      Math.floor(p.mouseY / CELL_W),
+    ];
+    if (grid.isObstacle(row, col)) {
+      return bombsLeft > 0 ? "Destory wall!" : "No bombs left to destroy wall!";
+    }
+    if (grid.isKey(row, col)) {
+      return "Key to new life";
+    }
+    if (grid.isKey(row, col, true)) {
+      return "Teleport & Quit!!";
+    }
+    // empty
+    return "Click to walk.";
   };
 
   h.renderWall = (x, y) => {
@@ -173,6 +241,10 @@ export default new p5((p) => {
 
   h.renderEmptyCell = (x, y) => {
     p.image(tiles, x, y, CELL_W, CELL_W, 0, 0, 32, 32);
+  };
+
+  h.renderKey = (x, y, skull = false) => {
+    p.image(tiles, x, y, CELL_W, CELL_W, 4 * 32, skull ? 32 : 0, 32, 32);
   };
 
   h.gridX = (cellX) => {

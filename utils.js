@@ -17,3 +17,17 @@ export const range = (n) => {
   const l = [...Array(n)];
   return () => l;
 };
+
+export class Storage {
+  static set = (k, v) => {
+    sessionStorage.setItem(`key:${k}`, v);
+  };
+
+  static get = (k, defaultVal = undefined) => {
+    return sessionStorage.getItem(`key:${k}`) || defaultVal;
+  };
+
+  static rm = (k) => {
+    sessionStorage.removeItem(`key:${k}`);
+  };
+}
