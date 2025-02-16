@@ -1,5 +1,6 @@
 import { Grid } from "./grid.js";
 import { Log, randInt, range, Storage, Sounds } from "./utils.js";
+import { giveupMsg } from "./quotes.js";
 
 // dimensions
 const FRAME_RATE = 9;
@@ -104,14 +105,38 @@ export default new p5((p) => {
     if (introScreenInitialized) return;
     p.background(BG_COL);
     p.push();
-    p.textSize(30);
+    p.textSize(TEXT_SIZE_L * 2);
     p.textAlign(p.CENTER);
-    const msg = "Welcome!!";
-    // TODO add game play
-    p.text(msg, CANVAS_W / 2, CANVAS_H / 2);
+    const baseY = CANVAS_H / 3;
+    const msg = "Follow Thy Heart";
+    p.text(msg, CANVAS_W / 2, baseY);
+    p.textSize(TEXT_SIZE_M * 2);
+    p.textAlign(p.LEFT);
+    const rules =
+      "Game play\n" +
+      "1. Click on empty cell to walk toward it\n" +
+      "2. Click on walls to destroy if you have 💥 left\n" +
+      "3. Walk to yellow key to have a new life\n" +
+      "4. Click white skull key to give up";
+    p.text(
+      rules,
+      CANVAS_W / 2 - p.textWidth(rules) / 2,
+      baseY + TEXT_SIZE_M * 2 + TEXT_PAD
+    );
+    p.textSize(TEXT_SIZE_M * 1.5);
+    p.textStyle(p.ITALIC);
+    const goal =
+      "Goal: survive as long as possible while collecting hearts.\n" +
+      "Only end to the game is if you give up!";
+    p.text(
+      goal,
+      CANVAS_W / 2 - p.textWidth(goal) / 2,
+      baseY + 3 * TEXT_PAD + 12 * TEXT_SIZE_M
+    );
+
     h.createButton(
       CANVAS_W / 2,
-      CANVAS_H / 2 + 2 * TEXT_PAD,
+      baseY + 3 * TEXT_PAD + 15 * TEXT_SIZE_M,
       "Start playing",
       (btn) => {
         // TODO fix bug clicking on button triggers first click in grid
@@ -157,10 +182,11 @@ export default new p5((p) => {
     if (givenUpInitialized) return;
     p.background(BG_COL);
     p.push();
-    p.textSize(30);
+    p.textSize(2 * TEXT_SIZE_L);
     p.textAlign(p.CENTER);
-    const msg = "You have given up!";
+    const msg = "You've given up!";
     p.text(msg, CANVAS_W / 2, CANVAS_H / 2);
+
     h.createButton(
       CANVAS_W / 2,
       CANVAS_H / 2 + 2 * TEXT_PAD,
@@ -171,6 +197,18 @@ export default new p5((p) => {
         [givenUp, givenUpInitialized] = [false, false];
       }
     );
+
+    p.textSize(1.5 * TEXT_SIZE_M);
+    p.textStyle(p.ITALIC);
+    const quote = giveupMsg[randInt(giveupMsg.length)];
+    p.text(
+      `"${quote.text}"`,
+      CANVAS_W / 4,
+      CANVAS_H / 2 + 8 * TEXT_PAD,
+      CANVAS_W / 2,
+      CANVAS_H / 2
+    );
+
     givenUpInitialized = true;
     p.pop();
   };
@@ -183,7 +221,7 @@ export default new p5((p) => {
 
   // should work on touch too
   p.mousePressed = () => {
-    if (givenUp) return;
+    if (givenUp || introScreen || newLifeScreen) return;
     const [col, row] = [
       Math.floor(p.mouseX / CELL_W),
       Math.floor(p.mouseY / CELL_W),

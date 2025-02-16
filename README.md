@@ -1,26 +1,26 @@
 # FTH
 
-A 2D game to pick hearts while surviving the collapsing world around you. I wrote this game for Feb 14th 2025.
+A 2D game to pick hearts while surviving the collapsing world around you. I wrote this game for 14th of Feb `25.
 
-Try it at [jan25/fth](https://jan25.github.io/fth/)
+Try it out here: [jan25/fth](https://jan25.github.io/fth/)
 
 ## Game play
 
-As a player(add character) you should survive the world while picking as many hearts as possible over several life times until death summons. This is an **endless game play**, only end criteria is if you give up.
+As a player your goal is to survive the world while collecting as many hearts as possible over several life times until death summons. This is an **endless game play**, it only ends when you give up.
 
-You are allowed these game moves:
+### Allowed game moves
 
-1. Select any empty cell to walk to.
-2. Select heart to walk toward it, and pick up if you reach it.
-3. Select obstacles to clear while you have explosives left.
+1. Click on any empty cell to walk towards.
+2. Walk towards a heart to collect it.
+3. Click on obstacles to clear way with explosives if you have left.
 4. Reach yellow key to start a new life and continue play.
-5. Select skull key to give up.
+5. Click on white skull key to give up and end the game.
 
 <img src="./assets/game.png" width="443" />
 
-For best experience play in desktop screen!
+For best experience play on desktop screen!
 
 ## Credits
 
 - Game assets are from amazing [Open game art](https://opengameart.org/) community.
-- [wle8300](https://github.com/wle8300) for providing UIfx library.
+- Thanks to [wle8300](https://github.com/wle8300) for [UIfx](https://github.com/wle8300/uifx) sounds library.
