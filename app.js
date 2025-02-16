@@ -1,5 +1,5 @@
 import { Grid } from "./grid.js";
-import { Log, range, Storage, Sounds } from "./utils.js";
+import { Log, randInt, range, Storage, Sounds } from "./utils.js";
 
 // dimensions
 const FRAME_RATE = 9;
@@ -18,6 +18,7 @@ const HEART_FRAME_W = 384 / HEART_SHEET_FRAMES;
 const TEXT_SIZE_L = 14;
 const TEXT_SIZE_M = 8;
 const TEXT_PAD = 10;
+let [CANVAS_X, CANVAS_Y] = [0, 0];
 
 // colors
 const BG_COL = 200;
@@ -33,8 +34,12 @@ let level;
 let [spriteFrameRow, spriteFrameCol] = [0, 0];
 let heartFrame = 0;
 let score;
+let lifes = 1;
 let bombsLeft;
 let bestScore;
+let [introScreen, introScreenInitialized] = [true, false];
+let [givenUp, givenUpInitialized] = [false, false];
+let [newLifeScreen, newLifeTimer] = [false, -1];
 
 export default new p5((p) => {
   // helpers
@@ -46,28 +51,44 @@ export default new p5((p) => {
     tiles = p.loadImage("assets/tiles.png");
     h.rangeRows = range(ROWS);
     h.rangeCols = range(COLS);
-
-    h.newGame();
   };
 
   h.newGame = () => {
     h.initNewGrid();
     score = 0;
+    lifes = 1;
     bestScore = Storage.get("best", 0);
   };
 
-  h.initNewGrid = () => {
-    grid = Grid.create(ROWS, COLS, N_OBSTACLES);
+  h.initNewGrid = (isNewLife = false) => {
+    grid = isNewLife
+      ? Grid.create(ROWS, COLS, N_OBSTACLES, grid.spritePos, grid.heartPos)
+      : Grid.create(ROWS, COLS, N_OBSTACLES);
     bombsLeft = ROWS;
     level = 5;
   };
 
   p.setup = () => {
-    p.createCanvas(CANVAS_W, CANVAS_H + CANVAS_BUFFER);
+    CANVAS_X = (p.windowWidth - CANVAS_W) / 2;
+    const canvas = p.createCanvas(CANVAS_W, CANVAS_H + CANVAS_BUFFER);
+    canvas.position(CANVAS_X, 0);
     p.frameRate(FRAME_RATE);
   };
 
   p.draw = () => {
+    if (introScreen) {
+      h.showIntroScreen();
+      return;
+    }
+    if (newLifeScreen) {
+      h.showNewLifeScreen();
+      return;
+    }
+    if (givenUp) {
+      h.showGiveupScreen();
+      return;
+    }
+
     p.background(BG_COL);
 
     h.showMsg();
@@ -79,8 +100,90 @@ export default new p5((p) => {
     h.updateHeartIfReached();
   };
 
+  h.showIntroScreen = () => {
+    if (introScreenInitialized) return;
+    p.background(BG_COL);
+    p.push();
+    p.textSize(30);
+    p.textAlign(p.CENTER);
+    const msg = "Welcome!!";
+    // TODO add game play
+    p.text(msg, CANVAS_W / 2, CANVAS_H / 2);
+    h.createButton(
+      CANVAS_W / 2,
+      CANVAS_H / 2 + 2 * TEXT_PAD,
+      "Start playing",
+      (btn) => {
+        // TODO fix bug clicking on button triggers first click in grid
+        h.newGame();
+        btn.remove();
+        introScreen = false;
+        introScreenInitialized = false;
+      }
+    );
+    introScreenInitialized = true;
+    p.pop();
+  };
+
+  h.showNewLifeScreen = () => {
+    p.background(BG_COL);
+    p.push();
+    p.textSize(30);
+    p.textAlign(p.CENTER);
+    const msg = "New life starting in..";
+    p.text(msg, CANVAS_W / 2, CANVAS_H / 2);
+    p.textSize(40);
+    p.text(
+      `${Math.max(0, newLifeTimer)}`,
+      CANVAS_W / 2,
+      CANVAS_H / 2 + 30 + TEXT_PAD
+    );
+    if (newLifeTimer < 0) {
+      newLifeTimer = 3;
+      const timerID = setInterval(() => {
+        newLifeTimer--;
+        if (newLifeTimer < 0) {
+          clearInterval(timerID);
+          h.initNewGrid(true);
+          newLifeScreen = false;
+          lifes++;
+        }
+      }, 1000);
+    }
+    p.pop();
+  };
+
+  h.showGiveupScreen = () => {
+    if (givenUpInitialized) return;
+    p.background(BG_COL);
+    p.push();
+    p.textSize(30);
+    p.textAlign(p.CENTER);
+    const msg = "You have given up!";
+    p.text(msg, CANVAS_W / 2, CANVAS_H / 2);
+    h.createButton(
+      CANVAS_W / 2,
+      CANVAS_H / 2 + 2 * TEXT_PAD,
+      "Start over",
+      (btn) => {
+        btn.remove();
+        [introScreen, introScreenInitialized] = [true, false];
+        [givenUp, givenUpInitialized] = [false, false];
+      }
+    );
+    givenUpInitialized = true;
+    p.pop();
+  };
+
+  h.createButton = (x, y, msg, callback) => {
+    const button = p.createButton(msg);
+    button.position(CANVAS_X + x - button.width / 2, CANVAS_Y + y);
+    button.mousePressed(() => callback(button));
+  };
+
   // should work on touch too
   p.mousePressed = () => {
+    if (givenUp) return;
     const [col, row] = [
       Math.floor(p.mouseX / CELL_W),
       Math.floor(p.mouseY / CELL_W),
@@ -91,7 +194,7 @@ export default new p5((p) => {
 
     if (grid.isKey(row, col, true)) {
       // Skull key
-      h.newGame();
+      givenUp = true;
       return;
     }
 
@@ -135,7 +238,7 @@ export default new p5((p) => {
   h.updateHeartIfReached = () => {
     if (grid.isHeartReached()) {
       grid.moveHeart();
-      grid.setObstacle(level);
+      grid.setObstacle(level + randInt(level + 1));
       grid.createKeys();
 
       score++;
@@ -147,7 +250,7 @@ export default new p5((p) => {
 
   h.updateIfKeyReached = () => {
     if (grid.isKeyReached()) {
-      h.initNewGrid();
+      newLifeScreen = true;
     }
   };
 
@@ -208,7 +311,11 @@ export default new p5((p) => {
     const [x, y] = [TEXT_PAD, CANVAS_H + TEXT_PAD / 3];
     p.textStyle(p.NORMAL);
     p.textSize(TEXT_SIZE_L);
-    p.text(`${score} ❤️picked`, x, y + TEXT_SIZE_L);
+    p.text(
+      `${score} ❤️picked` + (lifes > 1 ? ` in ${lifes} lifetimes` : ""),
+      x,
+      y + TEXT_SIZE_L
+    );
     p.text(`${bombsLeft} 💥left`, x, y + 2 * TEXT_SIZE_L);
     p.textSize(TEXT_SIZE_M);
     p.textStyle(p.ITALIC);
@@ -239,16 +346,16 @@ export default new p5((p) => {
       Math.floor(p.mouseY / CELL_W),
     ];
     if (grid.isObstacle(row, col)) {
-      return bombsLeft > 0 ? "💥Destory wall!" : "⚠No bombs left";
+      return bombsLeft > 0 ? "💥Destory wall!" : "No 💥 left";
     }
     if (grid.isKey(row, col)) {
       return "🗝️Key to new life";
     }
     if (grid.isKey(row, col, true)) {
-      return "🆘Teleport & Quit‼️";
+      return "🆘Click to Give up‼️";
     }
     // empty
-    return "🏃🏻‍♂️‍➡️Click to run";
+    return "🏃🏻‍♂️‍➡️Click to walk";
   };
 
   h.renderWall = (x, y) => {

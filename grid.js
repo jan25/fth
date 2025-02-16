@@ -110,11 +110,11 @@ export class Grid {
     this.spritePath = [];
   }
 
-  static create(nRows, nCols, nObs) {
+  static create(nRows, nCols, nObs, keepSpritePos, keepHeartPos) {
     const grid = new Grid(nRows, nCols);
+    grid.spritePos = keepSpritePos || grid.emptyCells.rmRand();
+    grid.heartPos = keepHeartPos || grid.emptyCells.rmRand();
     grid.#createObstacles(nObs);
-    grid.spritePos = grid.emptyCells.rmRand();
-    grid.heartPos = grid.emptyCells.rmRand();
     return grid;
   }
 
